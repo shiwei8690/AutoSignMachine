@@ -4,7 +4,7 @@ const fs = require('fs-extra')
 var moment = require('moment');
 moment.locale('zh-cn');
 const { getCookies, saveCookies, delCookiesFile } = require('./util')
-const { TryNextEvent, CompleteEvent } = require('./EnumError')
+const { TryNextError } = require('./EnumError')
 const _request = require('./request')
 var crypto = require('crypto');
 const { default: PQueue } = require('p-queue');
@@ -237,7 +237,6 @@ let scheduler = {
         }
         process.env['taskKey'] = [command, scheduler.taskKey].join('_')
         process.env['command'] = command
-        console.info(scheduler.taskKey, scheduler.taskKey.replaceWithMask)
         console.info('将使用', scheduler.taskKey.replaceWithMask(2, 3), '作为账户识别码')
         await scheduler.genFileName(command)
         await scheduler.initTasksQueue()
@@ -338,15 +337,8 @@ let scheduler = {
                             scheduler.updateTaskFile(task, newTask)
                         }
                     } catch (err) {
-                        if (err instanceof TryNextEvent) {
+                        if (err instanceof TryNextError) {
                             console.info(err.message)
-                        } else if (err instanceof CompleteEvent) {
-                            console.info(err.message)
-                            let newTask = {
-                                failNum: 0,
-                                taskState: 1
-                            }
-                            scheduler.updateTaskFile(task, newTask)
                         } else {
                             console.info('任务错误：', err)
                             if (task.failNum > 3) {

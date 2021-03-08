@@ -83,8 +83,8 @@ var start = async (params) => {
   await scheduler.regTask('dailyBookRead10doDraw', async (request) => {
     // 首页-小说-读满10章赢好礼
     await require('./dailyVideoBook').read10doDraw(request, options)
-    // 首页-签到有礼-免流量得福利-3积分天天拿(阅读打卡) 已下线
-    // await require('./dailyVideoBook').giftBoints(request, options)
+    // 首页-签到有礼-免流量得福利-3积分天天拿(阅读打卡)
+    await require('./dailyVideoBook').giftBoints(request, options)
   }, taskOption)
 
   // 首页-小说-章节详情-看视频领积分
@@ -332,9 +332,9 @@ var start = async (params) => {
 
 
   // 我的钱包-沃钱包-幸运抽大奖
-  await scheduler.regTask('dailystw', async (request) => {
-    await require('./dailystw').doTask(request, options)
-  }, taskOption)
+  // await scheduler.regTask('dailyepay', async (request) => {
+  //   await require('./dailyepay').doTask(request, options)
+  // }, taskOption)
 
 
   // 沃钱包-联通支付日-转盘抽奖
@@ -406,7 +406,7 @@ var start = async (params) => {
     ...taskOption,
     isCircle: true,
     intervalTime: intervalTime,
-    startTime: 5 * 60,
+    startTime: 30 * 60,
     ignoreRelay: true
   })
 

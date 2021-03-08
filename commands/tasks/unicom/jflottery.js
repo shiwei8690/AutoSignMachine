@@ -2,7 +2,7 @@ var crypto = require('crypto');
 var CryptoJS = require("crypto-js");
 const { URL } = require('url');
 const { appInfo, buildUnicomUserAgent } = require('../../../utils/device')
-const { signRewardVideoParams, encryptParamsV3 } = require('./CryptoUtil')
+const { signRewardVideoParams } = require('./CryptoUtil')
 // 豪礼大派送
 var transParams = (data) => {
     let params = new URLSearchParams();
@@ -212,7 +212,7 @@ module.exports = {
                 },
                 url: `/jf-yuech/api/gameResultV2/timesDrawForPrize`,
                 method: 'post',
-                data: encryptParamsV3(p1, jfid)
+                data: params
             })
             result = res.data
             if (result.code !== 0) {
