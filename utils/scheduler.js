@@ -237,8 +237,8 @@ let scheduler = {
         }
         process.env['taskKey'] = [command, scheduler.taskKey].join('_')
         process.env['command'] = command
+        // 此处 scheduler.taskKey 可能为数字，导致报错。所以进行处理
         scheduler.taskKey = scheduler.taskKey + ""
-        console.info(scheduler.taskKey, typeof scheduler.taskKey)
         console.info('将使用', scheduler.taskKey.replaceWithMask(2, 3), '作为账户识别码')
         await scheduler.genFileName(command)
         await scheduler.initTasksQueue()
