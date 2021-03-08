@@ -237,7 +237,7 @@ let scheduler = {
         }
         process.env['taskKey'] = [command, scheduler.taskKey].join('_')
         process.env['command'] = command
-        console.log(scheduler.taskKey, scheduler.taskKey.replaceWithMask)
+        console.info(scheduler.taskKey, scheduler.taskKey.replaceWithMask)
         console.info('将使用', scheduler.taskKey.replaceWithMask(2, 3), '作为账户识别码')
         await scheduler.genFileName(command)
         await scheduler.initTasksQueue()
