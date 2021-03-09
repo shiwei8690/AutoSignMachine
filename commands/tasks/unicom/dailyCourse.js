@@ -217,7 +217,7 @@ var dailyCourse = {
     // 连续7天阶梯奖励 每日挑战30分钟
     doTask: async (axios, options) => {
         // enditme 1639152e6
-        let phone = options.user + ""
+        let phone = options.user
         if (['170', '171', '149', '162', '165', '167'].indexOf(phone.substr(0, 3)) !== -1) {
             console.info('不支持该号码前缀', phone.substr(0, 3))
             return

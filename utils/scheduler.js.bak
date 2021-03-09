@@ -70,7 +70,7 @@ let scheduler = {
             let options = tasks[taskName].options || {}
             let willTime = moment(randomDate(options));
             // 任务的随机延迟时间
-            let waitTime = options.dev ? 0 : Math.floor(Math.random() * (options.waitTime || 60))
+            let waitTime = options.dev ? 0 : Math.floor(Math.random() * (options.waitTime || 300))
             if (options) {
                 if (options.isCircle || options.dev) {
                     willTime = moment().startOf('days');
@@ -90,7 +90,7 @@ let scheduler = {
             queues.push({
                 taskName: taskName,
                 taskState: 0,
-                willTime: willTime.format('YYYY-MM-DD 00:00:00'),
+                willTime: willTime.format('YYYY-MM-DD HH:mm:ss'),
                 waitTime: waitTime
             })
         }
@@ -233,7 +233,7 @@ let scheduler = {
         scheduler.taskKey = taskKey || 'default'
         if (scheduler.isTryRun) {
             console.info('!!!当前运行在TryRun模式，仅建议在测试时运行!!!')
-            await new Promise((resolve) => setTimeout(resolve, 1000))
+            await new Promise((resolve) => setTimeout(resolve, 3000))
         }
         process.env['taskKey'] = [command, scheduler.taskKey].join('_')
         process.env['command'] = command
@@ -348,7 +348,7 @@ let scheduler = {
                             scheduler.updateTaskFile(task, newTask)
                         } else {
                             console.info('任务错误：', err)
-                            if (task.failNum > 5) {
+                            if (task.failNum > 3) {
                                 console.error('任务错误次数过多，停止该任务后续执行')
                                 let newTask = {
                                     taskState: 2,

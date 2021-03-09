@@ -1,4 +1,4 @@
-const { encryptParamsV1, encryptParamsV2, CryptoJS_encrypt, CryptoJS_decrypt, signRewardVideoParams, decryptParamsV1, decryptParamsV2, decryptionTaskRewardVideoParams } = require('./CryptoUtil')
+const { encryptParamsV1, encryptParamsV2, encryptParamsV3, CryptoJS_encrypt, CryptoJS_decrypt, signRewardVideoParams, decryptParamsV1, decryptParamsV2, decryptionTaskRewardVideoParams } = require('./CryptoUtil')
 const crypto = require('crypto');
 const { device, appInfo, buildUnicomUserAgent } = require('../../../utils/device')
 
@@ -236,7 +236,7 @@ var dailyLKMH = {
         ...options,
         Authorization,
         activityId: activity.activityId,
-        params: encryptParamsV2(p)
+        params: encryptParamsV3(p, plat.jfid)
       })
 
       console.info('等待15秒再继续')

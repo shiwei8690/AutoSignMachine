@@ -1,4 +1,4 @@
-const { encryptParamsV1, encryptParamsV2, signRewardVideoParams, decryptParamsV1, decryptParamsV2, decryptionTaskRewardVideoParams } = require('./CryptoUtil')
+const { encryptParamsV1, encryptParamsV2, signRewardVideoParams, decryptParamsV1, decryptParamsV2, encryptParamsV3, decryptParamsV3, decryptionTaskRewardVideoParams } = require('./CryptoUtil')
 const crypto = require('crypto');
 const { device, appInfo, buildUnicomUserAgent } = require('../../../utils/device')
 
@@ -146,7 +146,7 @@ var dailyYYQ = {
     if (data.code !== 0) {
       console.info("摇一摇送好礼:", data.message)
     } else {
-      if(data.data.status === '中奖'){
+      if (data.data.status === '中奖') {
         console.reward(data.data.prizeName)
       }
       console.info('摇一摇送好礼:', data.data.status === '中奖' ? data.data.prizeName : data.data.status)
@@ -247,12 +247,11 @@ var dailyYYQ = {
         freeTimes--
       }
 
-
       await dailyYYQ.twisingLuckDraw(axios, {
         ...options,
         activityId: activity.activityId,
         Authorization,
-        params: encryptParamsV2(p)
+        params: encryptParamsV3(p, plat.jfid)
       })
 
       console.info('等待15秒再继续')

@@ -177,6 +177,8 @@ var xiaowogameh5 = {
             })
             console.info('等待1分钟')
             await new Promise((resolve, reject) => setTimeout(resolve, (Math.floor(Math.random() * 10) + 60) * 1000))
+
+            --n
         }
 
     }

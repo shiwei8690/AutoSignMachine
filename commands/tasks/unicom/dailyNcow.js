@@ -1,4 +1,4 @@
-const { encryptParamsV1, encryptParamsV2, signRewardVideoParams } = require('./CryptoUtil')
+const { encryptParamsV1, encryptParamsV2, encryptParamsV3, signRewardVideoParams } = require('./CryptoUtil')
 const crypto = require('crypto');
 const { device, appInfo, buildUnicomUserAgent } = require('../../../utils/device')
 
@@ -188,7 +188,7 @@ var dailyNcow = {
             await dailyNcow.timesDrawForPrize(axios, {
                 ...options,
                 Authorization,
-                params: encryptParamsV2(p)
+                params: encryptParamsV3(p, plat.jfid)
             })
 
             console.info('等待15秒再继续')

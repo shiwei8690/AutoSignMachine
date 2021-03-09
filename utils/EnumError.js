@@ -1,7 +1,9 @@
 class BusinessError extends Error { }
-class TryNextError extends Error { }
+class TryNextEvent extends Error { }
+class CompleteEvent extends Error { }
 
 module.exports = {
     BusinessError,
-    TryNextError
+    TryNextEvent,
+    CompleteEvent
 }

@@ -1,7 +1,7 @@
-const { encryptParamsV1, encryptParamsV2, signRewardVideoParams, decryptParamsV1, decryptParamsV2 } = require('./CryptoUtil')
+const { encryptParamsV1, encryptParamsV2, encryptParamsV3, signRewardVideoParams, decryptParamsV1, decryptParamsV2, decryptParamsV3 } = require('./CryptoUtil')
 const crypto = require('crypto');
 const { device, appInfo, buildUnicomUserAgent } = require('../../../utils/device')
-const { TryNextError } = require('../../../utils/EnumError')
+const { TryNextEvent } = require('../../../utils/EnumError')
 
 var dailyFingerSign = {
     openPlatLine: async (axios, options) => {
@@ -124,13 +124,12 @@ var dailyFingerSign = {
             data: params
         })
         return {
-            resultId: data.data.roundGame.roundId
+            resultId: data.data?.roundGame?.roundId
         }
     },
     roundGameForPrize: async (axios, options) => {
         const { Authorization, params, activityId } = options
         const useragent = buildUnicomUserAgent(options, 'p')
-
         let { data } = await axios.request({
             headers: {
                 "Authorization": `Bearer ${Authorization}`,
@@ -231,6 +230,7 @@ var dailyFingerSign = {
             if (roundGame && roundGame.drawStatus !== '2') {
                 console.info('存在未结束的回合，尝试出拳')
                 resultId = roundGame.roundId
+                activity = roundGame
             } else {
                 console.info(activity.activityName + `[${activity.activityId}]`, "已消耗机会", (1 + 4) - (freeTimes + advertTimes), "剩余免费机会", freeTimes, '看视频广告机会', advertTimes)
                 if (!freeTimes && !advertTimes) {
@@ -250,7 +250,7 @@ var dailyFingerSign = {
                         'activityId': activity.activityId,
                         'currentTimes': advertTimes,
                         'type': '广告',
-                        'integral': 50,
+                        'integral': 10,
                         'orderId': params['orderId'],
                         'phoneType': 'android',
                         'version': appInfo.version
@@ -263,8 +263,11 @@ var dailyFingerSign = {
                 let res = await dailyFingerSign.minusRondGames(axios, {
                     ...options,
                     Authorization,
-                    params: encryptParamsV2(p)
+                    params: encryptParamsV3(p, plat.jfid)
                 })
+                if (!res.resultId) {
+                    throw new Error('无法获得游戏回合')
+                }
                 resultId = res.resultId
             }
 
@@ -274,10 +277,10 @@ var dailyFingerSign = {
                     ...options,
                     Authorization,
                     activityId: activity.activityId,
-                    params: encryptParamsV2({
+                    params: encryptParamsV3({
                         activityId: activity.activityId,
                         resultId: resultId
-                    })
+                    }, plat.jfid)
                 })
                 await new Promise((resolve, reject) => setTimeout(resolve, 1000))
             } while (--m > 0)
@@ -289,7 +292,7 @@ var dailyFingerSign = {
         } while (a <= 4)
 
         if (!noTry) {
-            throw new TryNextError('在下一轮尝试一次')
+            throw new TryNextEvent('在下一轮尝试一次')
         }
     }
 }

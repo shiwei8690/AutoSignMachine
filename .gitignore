@@ -1,7 +1,8 @@
+/node_modules/
+/.idea/
 node_modules
 .vscode
 yarn.lock
-
 jspm_packages
-
 .serverless
+default.json

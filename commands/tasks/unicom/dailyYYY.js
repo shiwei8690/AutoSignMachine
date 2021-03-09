@@ -1,4 +1,4 @@
-const { encryptParamsV1, encryptParamsV2, signRewardVideoParams, decryptParamsV1 } = require('./CryptoUtil')
+const { encryptParamsV1, encryptParamsV2, encryptParamsV3, signRewardVideoParams, decryptParamsV1 } = require('./CryptoUtil')
 const crypto = require('crypto');
 const { device, appInfo, buildUnicomUserAgent } = require('../../../utils/device')
 
@@ -238,17 +238,17 @@ var dailyYYY = {
       let { resultId } = await dailyYYY.minusGameTimes(axios, {
         ...options,
         Authorization,
-        params: encryptParamsV2(p)
+        params: encryptParamsV3(p, plat.jfid)
       })
 
       await dailyYYY.luckDrawForPrize(axios, {
         ...options,
         activityId: activity.activityId,
         Authorization,
-        params: encryptParamsV2({
+        params: encryptParamsV3({
           activityId: activity.activityId,
           resultId: resultId
-        })
+        }, plat.jfid)
       })
 
       console.info('等待15秒再继续')

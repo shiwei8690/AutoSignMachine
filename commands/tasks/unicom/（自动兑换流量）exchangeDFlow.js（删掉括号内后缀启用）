@@ -1,7 +1,9 @@
 
 const { appInfo, buildUnicomUserAgent } = require('../../../utils/device')
+const { CompleteEvent } = require('../../../utils/EnumError')
 var moment = require('moment');
 moment.locale('zh-cn');
+const cheerio = require('cheerio')
 
 var transParams = (data) => {
     let params = new URLSearchParams();
@@ -12,7 +14,7 @@ var transParams = (data) => {
 };
 
 var exchangeDFlow = {
-    exchange: async (axios, options) => {
+    exchangeFlow: async (axios, options) => {
         const useragent = buildUnicomUserAgent(options, 'p')
         let phone = options.user + ''
         let phone_s = ''
@@ -73,14 +75,16 @@ var exchangeDFlow = {
         console.info('等待10秒查询激活状态')
         await new Promise((resolve, reject) => setTimeout(resolve, 10000))
 
-        data = await exchangeDFlow.mygiftbag(axios, options)
+        let flowPackages = await exchangeDFlow.querywinninglist(axios, options)
         await exchangeDFlow.queryPrizeDetails(axios, {
             ...options,
-            ...data,
+            firstPackage: flowPackages[0],
             selectedFlow
         })
+
     },
-    mygiftbag: async (axios, options) => {
+    // 查询我的流量礼包
+    querywinninglist: async (axios, options) => {
         const useragent = buildUnicomUserAgent(options, 'p')
         let { data } = await axios.request({
             headers: {
@@ -98,15 +102,65 @@ var exchangeDFlow = {
                 'CALLBACKURL': 'https://m.client.10010.com/myPrizeForActivity/querywinninglist.htm'
             })
         })
-        let matched = data.match(/toDetailPage\('(.*?)','(.*?)','(.*?)'\)/)
+        let $ = cheerio.load(data)
+        let cards = $('.container_main').find('a')
+        let flowPackages = []
+        for (let card of cards) {
+            let matched = $(card).attr('onclick').match(/toDetailPage\('(.*?)','(.*?)','(.*?)'\)/)
+            let activeBt = $(card).find('.boxBG_footer .activeBt')
+            let leftTime = $(card).find('.boxBG_footer .boxBG_footer_leftTime')
+            let productName = $(card).find('.boxBG_ul li:last-child').text().split('：').pop()
+            let html = $(leftTime).html()
+            if (html) {
+                leftTime = html.split('&nbsp;-&nbsp;').pop()
+            } else {
+                leftTime = ''
+            }
+            flowPackages.push({
+                activeCode: matched[1],
+                prizeRecordID: matched[2],
+                leftTime: moment(leftTime).valueOf(),
+                active: activeBt.length > 0,
+                productName: productName.replace(/ /g, '')
+            })
+        }
+        return flowPackages
+    },
+    // 激活流量包
+    activationFlowPackages: async (axios, options) => {
+        const { selectedFlow } = options
+        const useragent = buildUnicomUserAgent(options, 'p')
+        let { data } = await axios.request({
+            headers: {
+                "user-agent": useragent,
+                "referer": `https://m.client.10010.com/myPrizeForActivity/queryPrizeDetails.htm`,
+                "origin": "https://m.client.10010.com",
+                "X-Requested-With": "com.sinovatech.unicom.ui"
+            },
+            url: `https://m.client.10010.com/myPrizeForActivity/myPrize/activationFlowPackages.htm`,
+            method: 'POST',
+            data: transParams({
+                'activeCode': selectedFlow.activeCode,
+                'prizeRecordID': selectedFlow.prizeRecordID,
+                'activeName': '做任务领奖品'
+            })
+        })
+        console.info(data)
 
-        return {
-            activeCode: matched[1],
-            prizeRecordID: matched[2]
+        console.info('等待10秒查询激活状态')
+        await new Promise((resolve, reject) => setTimeout(resolve, 10000))
+
+        let flowPackages = await exchangeDFlow.querywinninglist(axios, options)
+        let flow = flowPackages.find(f => f.prizeRecordID === selectedFlow.prizeRecordID && f.activeCode === selectedFlow.activeCode)
+        if (!flow.active) {
+            console.notify(selectedFlow.productName, '激活成功')
+        } else {
+            console.notify(selectedFlow.productName, '激活失败')
+            throw new Error(selectedFlow.productName + ' 激活失败')
         }
     },
     queryPrizeDetails: async (axios, options) => {
-        const { selectedFlow } = options
+        const { firstPackage, selectedFlow } = options
         const useragent = buildUnicomUserAgent(options, 'p')
         let { data } = await axios.request({
             headers: {
@@ -120,9 +174,9 @@ var exchangeDFlow = {
             data: transParams({
                 'pageSign': '1',
                 'clicksource': '1',
-                'activeCode': options.activeCode,
-                'prizeRecordID': options.prizeRecordID,
-                'userNumber': options.user,
+                'activeCode': firstPackage.activeCode,
+                'prizeRecordID': firstPackage.prizeRecordID,
+                'userNumber': firstPackage.user,
                 'callbackUrl': 'https://m.client.10010.com/myPrizeForActivity/querywinninglist.htm',
                 'shareTitle': '我的礼包全新改版',
                 'shareContent': '奖品种类丰富，分类一目了然，多多参与联通手厅活动，你就有机会中大奖！',
@@ -131,6 +185,7 @@ var exchangeDFlow = {
                 'typeScreenCondition': '2'
             })
         })
+        console.error(firstPackage, selectedFlow)
         let matched = data.match(/class="fy">([^<].*?)<\/span>/g)
         if (matched.length === 5) {
             let name_matched = matched[0].match(/class="fy">([^<].*?)<\/span>/)
@@ -175,6 +230,14 @@ var exchangeDFlow = {
         if (typeof minFlow !== 'number') {
             minFlow = 200
         }
+        // 可使用 --exchangeDFlowCircle-endMinute 45 选项指定距离0点的间隔分钟数，不足endMinute分钟时不再兑换流量
+        let { 'exchangeDFlowCircle-endMinute': endMinute = 45 } = options
+        if (typeof endMinute !== 'number') {
+            endMinute = 45
+        }
+        if (!moment().isBefore(moment().endOf('days').subtract(endMinute, 'minutes'))) {
+            throw new CompleteEvent('距离0点不足45分钟，不再兑换流量')
+        }
         let need_exchange = false
         let data = await exchangeDFlow.queryOcsPackageFlowLeftContent(axios, options)
         if (data.length) {
@@ -196,6 +259,18 @@ var exchangeDFlow = {
             await exchangeDFlow.exchange(axios, options)
         } else {
             console.info('跳过兑换流量包')
+        }
+    },
+    exchange: async (axios, options) => {
+        let flowPackages = await exchangeDFlow.querywinninglist(axios, options)
+        let flowPackagesActive = flowPackages.filter(f => f.active)
+        if (flowPackagesActive.length) {
+            await exchangeDFlow.activationFlowPackages(axios, {
+                ...options,
+                selectedFlow: flowPackagesActive.pop()
+            })
+        } else {
+            await exchangeDFlow.exchangeFlow(axios, options)
         }
     },
     doTask: async (axios, options) => {

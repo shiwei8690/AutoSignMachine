@@ -21,6 +21,27 @@ var CryptoJS_decrypt = function (word, keyStr) {
     return decrypted.toString(CryptoJS.enc.Utf8);
 }
 
+var CryptoJS_RC4_encrypt = function (word, keyStr) {
+    var key = CryptoJS.enc.Utf8.parse(keyStr);
+    var srcs = CryptoJS.enc.Utf8.parse(word);
+    var encrypted = CryptoJS.RC4.encrypt(srcs, key, {
+        iv: keyStr,
+        mode: CryptoJS.mode.ECB,
+        padding: CryptoJS.pad.Pkcs7
+    });
+    return encrypted.toString();
+}
+
+var CryptoJS_RC4_decrypt = function (word, keyStr) {
+    var key = CryptoJS.enc.Utf8.parse(keyStr);
+    var decrypted = CryptoJS.RC4.decrypt(word, key, {
+        iv: keyStr,
+        mode: CryptoJS.mode.ECB,
+        padding: CryptoJS.pad.Pkcs7
+    });
+    return CryptoJS.enc.Utf8.stringify(decrypted);
+}
+
 var crypto_encrypt = function (data, key) {
     var iv = "";
     var cipherEncoding = 'base64';
@@ -96,6 +117,14 @@ var CryptoUtil = {
     decryptParamsV2: (data) => {
         let decrypt_key = data.parKey.map(s => s.substring(0x0, 0x4)).join('')
         return JSON.parse(CryptoJS_decrypt(data.params.substr(0, data.params.length - 1), decrypt_key))
+    },
+    encryptParamsV3: (params, jfid) => {
+        return {
+            "params": CryptoJS_RC4_encrypt(JSON.stringify(params), jfid.slice(0x3, 0x13))
+        }
+    },
+    decryptParamsV3: (data, jfid) => {
+        return JSON.parse(CryptoJS_RC4_decrypt(data.params, jfid.slice(0x3, 0x13)))
     },
     // data 是准备加密的字符串,key是你的密钥
     encryptionTaskRewardVideoParams: (params) => {
